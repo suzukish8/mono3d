@@ -171,6 +171,11 @@ header>*{min-width:0}
   #chip{padding:0 4px 4px;min-height:18px}
 }
 
+.chk.share{background:#eef4ff;border:1px solid #c9dafc;border-radius:12px;padding:10px 12px;font-size:14px;font-weight:700;flex-wrap:wrap}
+.chk.share small{font-weight:400;color:var(--mut);font-size:11px}
+.chk.share input{width:20px;height:20px}
+.chk.share[hidden]{display:none}
+
 </style>
 </head>
 <body>
@@ -341,8 +346,10 @@ header>*{min-width:0}
   <div class="card" id="saveCard" hidden>
     <h2>💾 保存する</h2>
     <label class="nm">作品の名前<input id="fname" type="text" maxlength="40" value="作品1"></label>
+    <label class="chk share" id="shareRow" hidden><input type="checkbox" id="shareMode"> 📤 共有メニューで送る <small>(Googleドライブ・AirDrop・LINE・メールなど)</small></label>
     <button class="big primary" data-save="xml">📄 作業データ (XML)<small>あとで続きを編集できる</small></button>
     <button class="big" data-save="stl">🖨 STL<small>3Dプリンタ用</small></button>
+    <button class="big" data-save="3mf">🧩 3MF<small>Bambu Studioなどで開ける</small></button>
     <button class="big" data-save="step">⚙ STEP<small>ほかのCADで開ける</small></button>
     <button class="close">とじる</button>
   </div>
@@ -4102,6 +4109,55 @@ function buildSTL() {
   return new Blob([buf], { type: 'model/stl' });
 }
 
+
+/* ---------- 3MF (Bambu Studio / Orca / Cura などで開ける) ---------- */
+const CRC_T = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = u8 => { let c = 0xFFFFFFFF; for (let i = 0; i < u8.length; i++) c = CRC_T[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+// 圧縮なしのZIPを作る (3MFはZIPファイル)
+function zipStore(files) {
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  const u16 = v => [v & 255, (v >> 8) & 255], u32 = v => [v & 255, (v >> 8) & 255, (v >> 16) & 255, (v >>> 24) & 255];
+  files.forEach(f => {
+    const name = enc.encode(f.name), data = typeof f.data === 'string' ? enc.encode(f.data) : f.data, crc = crc32(data);
+    const head = new Uint8Array([0x50, 0x4b, 3, 4, ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(crc), ...u32(data.length), ...u32(data.length), ...u16(name.length), ...u16(0)]);
+    parts.push(head, name, data);
+    central.push(new Uint8Array([0x50, 0x4b, 1, 2, ...u16(20), ...u16(20), ...u16(0x0800), ...u16(0), ...u16(0), ...u16(0x21), ...u32(crc), ...u32(data.length), ...u32(data.length),
+      ...u16(name.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0), ...u32(0), ...u32(off)]), name);
+    off += head.length + name.length + data.length;
+  });
+  const cs = central.reduce((n, p) => n + p.length, 0);
+  const end = new Uint8Array([0x50, 0x4b, 5, 6, ...u16(0), ...u16(0), ...u16(files.length), ...u16(files.length), ...u32(cs), ...u32(off), ...u16(0)]);
+  return new Blob([...parts, ...central, end], { type: 'model/3mf' });
+}
+function build3MF(title) {
+  const list = objects.map(o => ({ o, t: worldTris(o) })).filter(x => x.t.length >= 9);
+  if (!list.length) return null;
+  let minZ = Infinity;
+  list.forEach(x => { for (let i = 2; i < x.t.length; i += 3) minZ = Math.min(minZ, x.t[i]); });   // 底面をプリントベッド(Z=0)に合わせる
+  const f = v => (Math.abs(v) < 5e-7 ? 0 : v).toFixed(5);
+  const bases = list.map((x, i) => '<base name="' + esc(x.o.userData.name) + '" displaycolor="' + colorHex(x.o).toUpperCase() + 'FF"/>').join('');
+  let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xml:lang="ja-JP" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">\n' +
+    '<metadata name="Title">' + esc(title) + '</metadata>\n<metadata name="Application">Mono3D</metadata>\n<resources>\n<basematerials id="1">' + bases + '</basematerials>\n';
+  list.forEach((x, idx) => {
+    const map = new Map(), vs = [], tr = [], t = x.t;
+    for (let i = 0; i < t.length; i += 9) {
+      if (area2(t, i) < 1e-12) continue;
+      const ids = [0, 3, 6].map(q => {
+        const X = f(t[i + q]), Y = f(t[i + q + 1]), Z = f(t[i + q + 2] - minZ), k = X + ' ' + Y + ' ' + Z;
+        let id = map.get(k); if (id === undefined) { id = vs.length; map.set(k, id); vs.push('<vertex x="' + X + '" y="' + Y + '" z="' + Z + '"/>'); } return id;
+      });
+      if (ids[0] !== ids[1] && ids[1] !== ids[2] && ids[0] !== ids[2]) tr.push('<triangle v1="' + ids[0] + '" v2="' + ids[1] + '" v3="' + ids[2] + '"/>');
+    }
+    xml += '<object id="' + (idx + 2) + '" name="' + esc(x.o.userData.name) + '" type="model" pid="1" pindex="' + idx + '"><mesh><vertices>' + vs.join('') + '</vertices><triangles>' + tr.join('') + '</triangles></mesh></object>\n';
+  });
+  xml += '</resources>\n<build>' + list.map((x, i) => '<item objectid="' + (i + 2) + '"/>').join('') + '</build>\n</model>';
+  return zipStore([
+    { name: '[Content_Types].xml', data: '<?xml version="1.0" encoding="UTF-8"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>' },
+    { name: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>' },
+    { name: '3D/3dmodel.model', data: xml }
+  ]);
+}
+
 /* ---------- STEP (AP203 ファセットB-rep) ---------- */
 function stepStr(s) {
   let o = '';
@@ -4175,16 +4231,40 @@ function fileBase() {
   try { localStorage.setItem('m3d_name', n); } catch (e) {}
   return n;
 }
+// 共有メニュー(Googleドライブ・AirDrop・LINE・メールなど)で送る。使えない端末ではダウンロードにする
+function shareFile(blob, filename) {
+  const tryTypes = [blob.type, 'application/octet-stream'];
+  for (const type of tryTypes) {
+    const file = new File([blob], filename, { type });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: filename }).then(() => toast('共有したよ'))
+        .catch(e => { if (e && e.name !== 'AbortError') { download(blob, filename); toast('共有できなかったので、ダウンロードしたよ'); } });
+      return;
+    }
+  }
+  download(blob, filename); toast('この端末では共有できないので、ダウンロードしたよ');
+}
 function doSave(fmt) {
-  const base = fileBase();
-  if (fmt === 'xml') { download(new Blob([toXML(snapshot(), base)], { type: 'application/xml' }), base + '.xml'); toast('XMLを保存したよ'); return; }
-  if (!objects.length) { toast('図形がないよ'); return; }
-  const b = fmt === 'stl' ? buildSTL() : buildSTEP(base);
-  if (!b) { toast('図形がないよ'); return; }
-  download(b, base + '.' + fmt);
+  const base = fileBase(), share = $('#shareMode').checked, ext = fmt;
+  let b;
+  if (fmt === 'xml') b = new Blob([toXML(snapshot(), base)], { type: 'application/xml' });
+  else {
+    if (!objects.length) { toast('図形がないよ'); return; }
+    b = fmt === 'stl' ? buildSTL() : fmt === '3mf' ? build3MF(base) : buildSTEP(base);
+    if (!b) { toast('図形がないよ'); return; }
+  }
+  try { localStorage.setItem('m3d_share', share ? '1' : '0'); } catch (e) {}
+  if (share) { shareFile(b, base + '.' + ext); return; }
+  download(b, base + '.' + ext);
   toast(fmt.toUpperCase() + 'を保存したよ');
 }
 const modal = $('#modal');
+(function initShare() {                                   // 共有に対応した端末だけ、チェックを出す(スマホは最初からON)
+  const can = !!(navigator.share && navigator.canShare), row = $('#shareRow');
+  row.hidden = !can;
+  let saved = null; try { saved = localStorage.getItem('m3d_share'); } catch (e) {}
+  $('#shareMode').checked = can && (saved === null ? matchMedia('(pointer:coarse)').matches : saved === '1');
+})();
 function openCard(id) { modal.hidden = false; $$('.card').forEach(c => c.hidden = c.id !== id); }
 function closeModal() { modal.hidden = true; }
 $('#btnSave').onclick = () => openCard('saveCard');
@@ -5012,7 +5092,7 @@ $('#btnPrev').onclick = () => {
 };
 commit('はじめ'); refreshPanel(); resize();
 { let seen = false; try { seen = localStorage.getItem('m3d_help'); localStorage.setItem('m3d_help', '1'); } catch (e) {} if (!seen) openCard('helpCard'); }
-window.__m3d = { proj: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; }, getArrows: () => arHandles.map(h => { const v = h.center.clone().project(camera), r = cv.getBoundingClientRect(); return { id: h.id, x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; }), startSketch, toExtrude, extrudeOk, getSk: () => sk, addShape, objects, buildSTEP, buildSTL, toXML, snapshot, runOp, select }; // デバッグ用
+window.__m3d = { build3MF, proj: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; }, getArrows: () => arHandles.map(h => { const v = h.center.clone().project(camera), r = cv.getBoundingClientRect(); return { id: h.id, x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; }), startSketch, toExtrude, extrudeOk, getSk: () => sk, addShape, objects, buildSTEP, buildSTL, toXML, snapshot, runOp, select }; // デバッグ用
 })();
 
 </script>
