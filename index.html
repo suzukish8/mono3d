@@ -143,6 +143,34 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
 .chk{display:flex;align-items:center;gap:4px}
 #skParams .tt{width:100%;margin:2px 0 4px;font-size:14px;padding:4px;border:1px solid var(--line);border-radius:6px}
 
+/* ===== スマホ縦画面 ===== */
+html,body{max-width:100%;overflow-x:hidden}
+#app{grid-template-columns:minmax(0,1fr)}
+header>*{min-width:0}
+@media (max-width:640px){
+  header{padding:5px 6px;gap:4px}
+  .brand{font-size:14px;overflow:hidden;text-overflow:ellipsis}
+  .hbtns{gap:3px;flex:none}
+  .hb,.ib{min-width:40px;height:40px;padding:0 8px;font-size:18px;display:flex;align-items:center;justify-content:center}
+  .lb{display:none}
+}
+
+#skParams .pt{cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:2px 0}
+#skParams .pc{font-weight:400;color:var(--pri);font-size:12px}
+#skParams.min .pr{display:none}
+#skParams.min{width:auto;max-height:none;padding:4px 10px}
+@media (max-width:640px){
+  #panel,#sketchPanel{padding:6px 8px calc(6px + env(safe-area-inset-bottom))}
+  #sketchPanel{max-height:46vh;overflow:auto}
+  .skt{font-size:13px;padding:0 2px 5px}
+  #skTools{gap:4px;margin-bottom:5px}
+  #skTools button{padding:7px 2px;font-size:13px}
+  .row3,.row{gap:4px;margin-bottom:4px}
+  .row3 button,.row button{padding:8px 3px;font-size:13px}
+  #sketchPanel .hint{margin:2px 2px 0;font-size:11px}
+  #chip{padding:0 4px 4px;min-height:18px}
+}
+
 </style>
 </head>
 <body>
@@ -152,9 +180,9 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
     <div class="hbtns">
       <button id="btnUndo" class="ib" title="元に戻す" aria-label="元に戻す">↶</button>
       <button id="btnRedo" class="ib" title="やり直し" aria-label="やり直し">↷</button>
-      <button id="btnFile" class="hb">📁 ファイル</button>
-      <button id="btnHist" class="hb">📜 履歴</button>
-      <button id="btnSave" class="hb primary">💾 保存</button>
+      <button id="btnFile" class="hb" aria-label="ファイル">📁<span class="lb"> ファイル</span></button>
+      <button id="btnHist" class="hb" aria-label="履歴">📜<span class="lb"> 履歴</span></button>
+      <button id="btnSave" class="hb primary" aria-label="保存">💾<span class="lb"> 保存</span></button>
       <button id="btnHelp" class="ib" title="使い方" aria-label="使い方">？</button>
     </div>
   </header>
@@ -4454,6 +4482,7 @@ function showOriginPlane(on) {
 function showStage(st) {
   sk.stage = st; updateCursor();
   showOriginPlane(st === 'extrude');
+  refreshParams();
   $('#drawBox').hidden = st !== 'draw'; $('#extBox').hidden = st !== 'extrude';
   const P = PLANES[sk.key];
   $('#skTitle').textContent = st === 'draw' ? '✏ ' + sk.key + '平面でスケッチ中 (' + P.hint + ')' : '⬆ 押し出して立体にする';
@@ -4675,12 +4704,13 @@ $$('#sketchPanel input[type=number]').forEach(i => i.addEventListener('keydown',
 /* --- 図形のパラメータ表 (左下) : 数値を直接編集できる --- */
 const AXN = { XY: ['X', 'Y'], YZ: ['Y', 'Z'], ZX: ['X', 'Z'] };
 const fv = v => String(+(+v).toFixed(2));
+let paramsMin = window.matchMedia('(max-width:640px)').matches;   // スマホでは最初は たたんでおく(作図の邪魔にならないように)
 function refreshParams() {
   const box = $('#skParams');
   if (!sk || sk.stage !== 'draw' || !sk.shapes.length) { box.hidden = true; box.innerHTML = ''; return; }
   const [ax, ay] = AXN[sk.key];
   const num = (i, k, label, v, extra) => '<label>' + label + '<input type="number" inputmode="decimal" step="1" data-i="' + i + '" data-k="' + k + '"' + (extra || '') + ' value="' + fv(v) + '"></label>';
-  let h = '<div class="pt">📐 スケッチの数値 (mm)</div>';
+  let h = '<div class="pt" id="ptToggle">📐 スケッチの数値 (mm) <span class="pc">' + (paramsMin ? '▸ ひらく' : '▾ たたむ') + '</span></div>';
   sk.shapes.forEach((sh, i) => {
     if (sh.grp) return;                                       // 文字の輪郭は、下の「文字」の行でまとめて編集
     if (sh.type === 'rect') {
@@ -4704,7 +4734,7 @@ function refreshParams() {
       '<input class="tt" type="text" data-t="' + tx.id + '" data-k="text" value="' + tx.text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;') + '"><div class="pg">' +
       n('x', '中心 ' + ax, tx.x) + n('y', '中心 ' + ay, tx.y) + n('size', 'サイズ', tx.size) + '</div></div>';
   });
-  box.innerHTML = h; box.hidden = false;
+  box.innerHTML = h; box.hidden = false; box.classList.toggle('min', paramsMin);
 }
 $('#skParams').addEventListener('input', e => {
   const t = e.target; if (!sk || t.tagName !== 'INPUT') return;
@@ -4743,6 +4773,7 @@ $('#skParams').addEventListener('click', e => {
   else removeShape(+b.dataset.del);
   sk.sel = null; redrawSketch(); refreshSkButtons();
 });
+$('#skParams').addEventListener('click', e => { if (e.target.closest('#ptToggle')) { paramsMin = !paramsMin; refreshParams(); } });
 $('#skParams').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.tagName === 'INPUT') e.target.blur(); });
 
 /* --- 3D画面の矢印で 厚み / 開始位置 を決める --- */
