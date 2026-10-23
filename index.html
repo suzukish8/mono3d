@@ -35,7 +35,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
 #panel,#sketchPanel{background:var(--card);border-top:1px solid var(--line);padding:6px 8px calc(8px + env(safe-area-inset-bottom));max-height:44vh;overflow:auto;-webkit-overflow-scrolling:touch}
 #chip{font-size:13px;color:var(--mut);padding:2px 4px 6px;min-height:22px}
 #chip b{color:var(--ink)}
-#tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:8px}
+#tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px}
 #tabs button{padding:8px 1px;font-size:11.5px;font-weight:700;border-radius:10px}
 #tabs button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
 .tab{display:none}.tab.on{display:block}
@@ -78,10 +78,6 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
   #panel,#sketchPanel{max-height:52vh}
 }
 
-#planeBtns{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-#planeBtns button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;font-weight:800;font-size:14px}
-#planeBtns svg{width:44px;height:44px;fill:none;stroke-width:2;stroke-linejoin:round}
-#planeBtns small{font-weight:400;font-size:11px;color:var(--mut)}
 #sketchPanel{border-top:1px solid var(--line)}
 .skt{font-weight:800;font-size:14px;padding:2px 4px 8px}
 .row3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px}
@@ -106,7 +102,6 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
 #histList li.cur .x{color:#fff}
 #histList li .x:hover{background:#ff6b6b33;color:#d33}
 @media (min-width:900px) and (orientation:landscape){
-  #history{position:static;width:auto;max-height:none;border-radius:0;box-shadow:none;border:0;border-right:1px solid var(--line);grid-row:2;grid-column:1}
 }
 .card .big[hidden]{display:none}
 
@@ -176,12 +171,90 @@ header>*{min-width:0}
 .chk.share input{width:20px;height:20px}
 .chk.share[hidden]{display:none}
 
+#chip:empty{display:none}
+
+/* パソコン(広い横画面)では右のパネルを出さない。スケッチ中だけ、スケッチ用パネルを右に出す */
+@media (min-width:900px) and (orientation:landscape){
+  #panel{display:none}
+  #app{grid-template-columns:minmax(0,1fr)}
+  #app.sketching{grid-template-columns:minmax(0,1fr) 360px}
+  #stage{grid-column:1}
+}
+
+/* 基準平面の表示チェック (ヘッダ) */
+.hl{display:flex;align-items:center;gap:10px;min-width:0;flex-wrap:wrap}
+#planeChecks{display:flex;gap:6px}
+#planeChecks label{display:flex;align-items:center;gap:3px;font-size:12px;font-weight:800;color:var(--c);background:color-mix(in srgb,var(--c) 10%,#fff);border:1px solid color-mix(in srgb,var(--c) 45%,#fff);border-radius:14px;padding:3px 8px 3px 5px;cursor:pointer;white-space:nowrap}
+#planeChecks input{width:15px;height:15px;margin:0;accent-color:var(--c)}
+@media (max-width:640px){
+  header{flex-wrap:wrap}
+  .hl{flex:1 1 100%;flex-wrap:nowrap;gap:8px}
+  #planeChecks{width:auto}
+  header{row-gap:3px}
+}
+/* 指で押しやすい大きさ(スマホ・タブレット) */
+@media (max-width:640px), (pointer:coarse){
+  #planeChecks{gap:8px}
+  #planeChecks label{font-size:16px;gap:6px;padding:0 14px 0 10px;min-height:44px;border-radius:24px}
+  #planeChecks input{width:24px;height:24px}
+}
+@media (max-width:640px){
+  .brand{font-size:15px}
+  .hl{gap:6px}
+}
+
+/* 作った順番のパネル: 3D画面の上に重ねて、半透明にする */
+#history{background:rgba(255,255,255,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-color:rgba(213,220,234,.8);box-shadow:0 2px 10px #0002}
+#histList li.cur{background:rgba(47,111,237,.85)}
+@media (min-width:900px) and (orientation:landscape){
+  #history{position:fixed;left:8px;top:64px;width:230px;max-height:calc(100vh - 80px);border-radius:12px;grid-row:auto;grid-column:auto}
+}
+
+#exKind{grid-template-columns:1fr 1.4fr;margin-bottom:8px}
+#exKind button{font-size:13px;padding:8px 4px}
+#extParams[hidden],#revParams[hidden]{display:none}
+/* スケッチ用パネルを半透明にして、3D画面に重ねる(パソコンの広い画面) */
+@media (min-width:900px) and (orientation:landscape){
+  #app.sketching{grid-template-columns:minmax(0,1fr)}
+  #sketchPanel{position:fixed;right:8px;top:64px;width:360px;max-height:calc(100vh - 80px);border-radius:14px;border:1px solid rgba(213,220,234,.8);
+    background:rgba(255,255,255,.58);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 2px 12px #0002;z-index:5;grid-row:auto;grid-column:auto}
+  #sketchPanel[hidden]{display:none}
+}
+
+.go3{grid-template-columns:.8fr 1.1fr 1.1fr}
+.go3 button{font-size:13px;padding:9px 2px}
+/* パネルの透明度を上げる(背景を薄く) */
+#history{background:rgba(255,255,255,.3)}
+@media (min-width:900px) and (orientation:landscape){
+  #sketchPanel{background:rgba(255,255,255,.3)}
+}
+
+/* プロパティ(手順をタップしたとき) */
+#propCard{position:fixed;right:8px;top:64px;width:320px;max-height:calc(100vh - 80px);overflow:auto;z-index:6;border-radius:14px;padding:10px;
+  background:rgba(255,255,255,.5);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid rgba(213,220,234,.8);box-shadow:0 2px 12px #0002}
+#propCard[hidden]{display:none}
+.pcH{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:14px}
+.pcH button{border:0;background:transparent;font-size:18px;padding:2px 8px}
+#propCard #pcSwatches{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+#propCard #pcSwatches button{width:32px;height:32px;border-radius:50%;padding:0;border:3px solid #fff;box-shadow:0 0 0 1px var(--line)}
+#propCard #pcSwatches button.on{box-shadow:0 0 0 3px var(--acc)}
+@media (max-width:640px){
+  #propCard{left:6px;right:6px;top:auto;bottom:6px;width:auto;max-height:55vh;background:rgba(255,255,255,.85)}
+}
+
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="brand">🧱 ものづくり3D</div>
+    <div class="hl">
+      <div class="brand">🧱 ものづくり3D</div>
+      <div id="planeChecks" title="基準平面の表示">
+        <label style="--c:#3b6fff"><input type="checkbox" data-pl="XY" checked>XY</label>
+        <label style="--c:#ff4a4a"><input type="checkbox" data-pl="YZ" checked>YZ</label>
+        <label style="--c:#2fb34a"><input type="checkbox" data-pl="ZX" checked>ZX</label>
+      </div>
+    </div>
     <div class="hbtns">
       <button id="btnUndo" class="ib" title="元に戻す" aria-label="元に戻す">↶</button>
       <button id="btnRedo" class="ib" title="やり直し" aria-label="やり直し">↷</button>
@@ -206,7 +279,6 @@ header>*{min-width:0}
       <button data-view="top">上</button>
       <button data-view="right">右</button>
       <button data-view="fit">全体</button>
-      <button data-view="planes">平面</button>
     </div>
     <div id="banner" hidden><span id="bannerText"></span><button id="bannerCancel">やめる</button></div>
     <div id="toast" hidden></div>
@@ -217,26 +289,15 @@ header>*{min-width:0}
   </main>
 
   <section id="panel">
-    <div id="chip">図形をタップして選んでね</div>
+    <div id="chip"></div>
     <nav id="tabs">
-      <button data-tab="sketch" class="on">✏ スケッチ</button>
-      <button data-tab="add">＋ 図形</button>
+      <button data-tab="add" class="on">＋ 図形</button>
       <button data-tab="move">✋ 動かす</button>
       <button data-tab="num">🔢 数値</button>
       <button data-tab="shape">🛠 加工</button>
     </nav>
 
-    <div class="tab on" id="tab-sketch">
-      <p class="hint" style="margin:0 0 6px">① 平面を選ぶ → ② 図形をかく → ③ 押し出して立体に</p>
-      <div id="planeBtns">
-        <button data-plane="XY"><svg viewBox="0 0 40 40"><path d="M4 28L14 12H36L26 28Z" fill="#3b6fff33" stroke="#3b6fff"/></svg>XY平面<small>上から見た面</small></button>
-        <button data-plane="YZ"><svg viewBox="0 0 40 40"><path d="M8 34V14L22 6V26Z" fill="#ff4a4a33" stroke="#ff4a4a"/></svg>YZ平面<small>右から見た面</small></button>
-        <button data-plane="ZX"><svg viewBox="0 0 40 40"><path d="M6 8H34V30H6Z" fill="#2fb34a33" stroke="#2fb34a"/></svg>ZX平面<small>正面から見た面</small></button>
-      </div>
-      <p class="hint">画面の半透明の面をタップで選択 → 出てくる「○○平面でスケッチ」を押すと始まります。</p>
-    </div>
-
-    <div class="tab" id="tab-add">
+    <div class="tab on" id="tab-add">
       <div id="palette"></div>
     </div>
 
@@ -291,6 +352,7 @@ header>*{min-width:0}
       <button data-tool="poly">⬠ 多角形</button>
       <button data-tool="curve">〰 曲線</button>
       <button data-tool="text">abc… 文字</button>
+      <button data-tool="axis">┅ 中心線</button>
       <button data-tool="erase">🧽 消しゴム</button>
     </div>
     <div id="txtBox" hidden>
@@ -306,13 +368,23 @@ header>*{min-width:0}
       <button id="skUndo">↶ 1つ戻す</button>
       <button id="skSnap" class="tg on">📐 きっちり: ON</button>
     </div>
-    <div class="row">
+    <div class="row3 go3">
       <button id="skCancel">✕ やめる</button>
-      <button id="skNext" class="primary">押し出す ▶</button>
+      <button id="skNext" class="primary">まっすぐ押出 ▶</button>
+      <button id="skRev" class="primary">回転で押出 ▶</button>
     </div>
     <p class="hint" id="skHint"></p>
   </div>
   <div id="extBox" hidden>
+    <div id="revParams" hidden>
+      <div class="extdist">
+        <label>回転する角度 <input id="rvA" type="number" inputmode="decimal" value="360" min="1" max="360" step="15"> °</label>
+        <input id="rvR" type="range" min="1" max="360" step="1" value="360">
+      </div>
+      <div class="row3" id="rvPresets"><button data-a="90">90°</button><button data-a="180">180°</button><button data-a="360">360°(1周)</button></div>
+      <p class="hint" style="margin:0 0 6px">スケッチで「中心線」をかいて、図形を中心線の片側にかいておきます。</p>
+    </div>
+    <div id="extParams">
     <p class="hint" style="margin:0 0 6px">3D画面の矢印をドラッグ: <b style="color:#ff7a00">オレンジ＝厚み</b> / <b style="color:#2f6fed">青＝開始位置</b>(青いスケッチの輪郭もドラッグできます)</p>
     <div class="extdist">
       <label>厚み(高さ) <input id="exD" type="number" inputmode="decimal" value="30" min="1" step="1"> mm</label>
@@ -326,6 +398,7 @@ header>*{min-width:0}
       <button data-dir="pos" class="on">手前へ</button>
       <button data-dir="neg">奥へ</button>
       <button data-dir="both">両側</button>
+    </div>
     </div>
     <div class="seg" id="exMode">
       <button data-mode="new" class="on">新しい立体</button>
@@ -341,6 +414,23 @@ header>*{min-width:0}
 </div>
 
 
+
+<section id="propCard" hidden>
+  <div class="pcH"><b><span id="pcStep"></span> <span id="pcName"></span> のプロパティ</b><button id="pcClose" aria-label="とじる">✕</button></div>
+  <div class="grid3">
+    <label>幅 X<input id="pc_sx" type="number" inputmode="decimal" step="1"></label>
+    <label>奥行 Y<input id="pc_sy" type="number" inputmode="decimal" step="1"></label>
+    <label>高さ Z<input id="pc_sz" type="number" inputmode="decimal" step="1"></label>
+    <label>位置 X<input id="pc_px" type="number" inputmode="decimal" step="1"></label>
+    <label>位置 Y<input id="pc_py" type="number" inputmode="decimal" step="1"></label>
+    <label>位置 Z<input id="pc_pz" type="number" inputmode="decimal" step="1"></label>
+    <label>回転 X°<input id="pc_rx" type="number" inputmode="decimal" step="15"></label>
+    <label>回転 Y°<input id="pc_ry" type="number" inputmode="decimal" step="15"></label>
+    <label>回転 Z°<input id="pc_rz" type="number" inputmode="decimal" step="15"></label>
+  </div>
+  <div id="pcSwatches"></div>
+  <p class="hint">数値を変えると、この手順から先の記録は、新しい手順として作り直されます(単位mm)。</p>
+</section>
 
 <div id="modal" hidden>
   <div class="card" id="saveCard" hidden>
@@ -3715,9 +3805,9 @@ function restore(snap) {
   select(s || null);
   requestRender();
 }
-function commit(label) {
+function commit(label, meta) {
   hist = hist.slice(0, hi + 1);
-  const sn = snapshot(); sn.label = label || '編集';
+  const sn = snapshot(); sn.label = label || '編集'; if (meta) Object.assign(sn, meta);
   hist.push(sn);
   if (hist.length > 100) hist.shift();
   hi = hist.length - 1;
@@ -3735,7 +3825,7 @@ function deleteFrom(i) {
 $('#histList').addEventListener('click', e => {
   const x = e.target.closest('.x');
   if (x) { deleteFrom(+x.dataset.del); return; }
-  const li = e.target.closest('li'); if (li) jumpTo(+li.dataset.i);
+  const li = e.target.closest('li'); if (li) editStep(+li.dataset.i);
 });
 $('#btnHist').onclick = () => $('#history').classList.toggle('closed');
 if (!window.matchMedia('(min-width:900px) and (orientation:landscape)').matches) $('#history').classList.add('closed');
@@ -3881,8 +3971,9 @@ cv.addEventListener('pointerup', e => {
   ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
   const hit = ray.intersectObjects(objects, false)[0];
   const m = hit ? hit.object : null;
-  if (!m && !pending && activeTab === 'sketch' && planeGroup.visible) {          // 何もない所で平面をタップ → スケッチ開始
-    const ph = ray.intersectObjects(planeMeshes, false)[0];
+  const faceHit = hit;
+  if (!m && !pending && planeGroup.visible) {          // 何もない所で平面をタップ → スケッチ開始
+    const ph = ray.intersectObjects(planeMeshes.filter(p => p.visible), false)[0];
     if (ph) {                                              // 1回目=平面を選ぶ(ハイライト) / 同じ平面をもう一度=スケッチ開始
       const k = ph.object.userData.plane;
       highlightPlane(k, e.clientX, e.clientY);                                   // 選択だけ。スケッチは「○○平面でスケッチ」ボタンを押したとき
@@ -3895,6 +3986,8 @@ cv.addEventListener('pointerup', e => {
     return;
   }
   select(m);
+  if (m) highlightFace(faceHit, e.clientX, e.clientY);     // 図形の面をハイライト → 「この面でスケッチ」
+  else clearFace();
 });
 let moved = false;
 transform.addEventListener('objectChange', () => {
@@ -3917,7 +4010,7 @@ function refreshPanel(fromDrag) {
   $$('.grid3 input').forEach(i => i.disabled = !has);
   const chip = $('#chip');
   if (!has) {
-    chip.textContent = '図形をタップして選んでね';
+    chip.textContent = '';
     $$('.grid3 input').forEach(i => i.value = '');
   } else {
     const o = selected, sz = baseSize(o).multiply(o.scale);
@@ -3931,11 +4024,13 @@ function refreshPanel(fromDrag) {
     }
   }
   $$('#swatches button').forEach(b => b.classList.toggle('on', has && b.dataset.c === colorHex(selected)));
+  fillProps();
 }
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
-function applyNumbers() {
+function applyNumbers(pre) {
+  pre = pre || '';
   const o = selected; if (!o) return;
-  const g = id => { const v = parseFloat($('#' + id).value); return isFinite(v) ? v : null; };
+  const g = id => { const v = parseFloat($('#' + pre + id).value); return isFinite(v) ? v : null; };
   const b = baseSize(o), min = o.userData.kind === 'mesh' ? .05 : 1;
   ['x', 'y', 'z'].forEach(a => {
     const s = g('s' + a); if (s !== null && s > 0.1) o.scale[a] = Math.max(min, s / b[a]);
@@ -3944,22 +4039,24 @@ function applyNumbers() {
   });
   refreshPanel(); requestRender(); commit('数値で変更: ' + o.userData.name);
 }
-$$('.grid3 input').forEach(i => i.addEventListener('change', applyNumbers));
-$$('.grid3 input').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') i.blur(); }));
+$$('#tab-num .grid3 input').forEach(i => i.addEventListener('change', () => applyNumbers('')));
+$$('#tab-num .grid3 input').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') i.blur(); }));
 
 $('#palette').innerHTML = Object.keys(KINDS).map(k =>
   '<button data-kind="' + k + '"><svg viewBox="0 0 40 40">' + KINDS[k].icon + '</svg>' + KINDS[k].label + '</button>').join('');
 $('#palette').addEventListener('click', e => { const b = e.target.closest('button'); if (b) addShape(b.dataset.kind); });
 $('#swatches').innerHTML = PALETTE.map(c => '<button data-c="' + c + '" style="background:' + c + '"></button>').join('');
+function setObjColor(c) {
+  currentColor = c;
+  if (selected) { selected.material.color.set(c); selected.material.emissive.copy(selected.material.color).multiplyScalar(.28); refreshPanel(); requestRender(); commit('色を変更: ' + selected.userData.name); }
+}
 $('#swatches').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   currentColor = b.dataset.c;
   if (selected) { selected.material.color.set(currentColor); selected.material.emissive.copy(selected.material.color).multiplyScalar(.28); refreshPanel(); requestRender(); commit('色を変更: ' + selected.userData.name); }
 });
-let activeTab = 'sketch';
 $('#tabs').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  activeTab = b.dataset.tab;
   $$('#tabs button').forEach(x => x.classList.toggle('on', x === b));
   $$('.tab').forEach(t => t.classList.toggle('on', t.id === 'tab-' + b.dataset.tab));
 });
@@ -3975,6 +4072,10 @@ $('#btnSnap').onclick = e => {
   e.currentTarget.textContent = '📐 きっちり動かす: ' + (snapOn ? 'ON' : 'OFF'); applySnap();
 };
 $('#btnFloor').onclick = dropToFloor;
+// 右パネルを出さない画面でも消せるように、Deleteキーで選択中の図形を消す
+window.addEventListener('keydown', e => {
+  if ((e.key === 'Delete' || e.key === 'Backspace') && selected && !sk && !/INPUT|TEXTAREA|SELECT/.test((document.activeElement || {}).tagName || '')) { e.preventDefault(); deleteSel(); }
+});
 $('#btnDup').onclick = duplicate;
 $('#btnDel').onclick = deleteSel;
 $('#btnUndo').onclick = undo;
@@ -4012,7 +4113,6 @@ function flyTo(pos, up, target, zoom, ms, done) {
   requestAnimationFrame(step);
 }
 function setView(v) {
-  if (v === 'planes') { planesOn = !planesOn; planeGroup.visible = planesOn; requestRender(); return; }
   const Z = new THREE.Vector3(0, 0, 1);
   if (v === 'fit') {
     const bb = new THREE.Box3();
@@ -4032,9 +4132,9 @@ function setView(v) {
 
 /* ---------- トースト ---------- */
 let toastT;
-function toast(msg) {
+function toast(msg, ms) {
   const t = $('#toast'); t.textContent = msg; t.hidden = false;
-  clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2200);
+  clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, ms || 2200);
 }
 
 /* ---------- XML 保存/読込 ---------- */
@@ -4238,11 +4338,11 @@ function shareFile(blob, filename) {
     const file = new File([blob], filename, { type });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       navigator.share({ files: [file], title: filename }).then(() => toast('共有したよ'))
-        .catch(e => { if (e && e.name !== 'AbortError') { download(blob, filename); toast('共有できなかったので、ダウンロードしたよ'); } });
+        .catch(e => { if (e && e.name !== 'AbortError') { download(blob, filename); toast('共有できなかったので、ダウンロードしました。「ファイル」アプリから共有してください', 7000); } });
       return;
     }
   }
-  download(blob, filename); toast('この端末では共有できないので、ダウンロードしたよ');
+  download(blob, filename); toast('このブラウザでは、この形式を共有できません。ダウンロードしたので、「ファイル」アプリ(ダウンロード)から共有してください', 7000);
 }
 function doSave(fmt) {
   const base = fileBase(), share = $('#shareMode').checked, ext = fmt;
@@ -4301,6 +4401,36 @@ function autosave() {
   autoT = setTimeout(() => { if (!objects.length) return; try { localStorage.setItem('m3d_auto', toXML(snapshot(), $('#fname').value || '作品')); } catch (e) {} }, 400);
 }
 
+
+/* ---------- 手順をタップして、プロパティを直す ---------- */
+function editStep(i) {
+  if (sk) return;                                           // スケッチ中は、手順の移動をしない
+  const h = hist[i]; if (!h) return;
+  if (h.sketch) { jumpTo(i - 1); resumeSketch(h.sketch, i); return; }   // スケッチ+押し出し/回転の手順 → 押し出しの画面を開き直す
+  jumpTo(i);
+  const o = objects.find(x => x.userData.id === h.sel);
+  if (o) { select(o); openProps(i); } else closeProps();
+}
+function openProps(i) { $('#propCard').hidden = false; $('#pcStep').textContent = '手順 ' + i; fillProps(); }
+function closeProps() { $('#propCard').hidden = true; }
+function fillProps() {
+  if ($('#propCard').hidden) return;
+  if (!selected) { closeProps(); return; }
+  const o = selected, sz = baseSize(o).multiply(o.scale), D = THREE.MathUtils.radToDeg;
+  $('#pcName').textContent = '「' + o.userData.name + '」';
+  const act = document.activeElement && document.activeElement.closest('#propCard');
+  if (!act) {
+    const set = (id, v) => { $('#pc_' + id).value = fmt(v); };
+    set('sx', sz.x); set('sy', sz.y); set('sz', sz.z); set('px', o.position.x); set('py', o.position.y); set('pz', o.position.z);
+    set('rx', D(o.rotation.x)); set('ry', D(o.rotation.y)); set('rz', D(o.rotation.z));
+  }
+  $$('#pcSwatches button').forEach(b => b.classList.toggle('on', b.dataset.c === colorHex(o)));
+}
+$('#pcSwatches').innerHTML = PALETTE.map(c => '<button data-c="' + c + '" style="background:' + c + '"></button>').join('');
+$('#pcSwatches').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setObjColor(b.dataset.c); });
+$('#pcClose').onclick = closeProps;
+$$('#propCard .grid3 input').forEach(i => { i.addEventListener('change', () => applyNumbers('pc_')); i.addEventListener('keydown', e => { if (e.key === 'Enter') i.blur(); }); });
+
 /* ---------- 基準平面とスケッチ ---------- */
 const V3 = THREE.Vector3;
 // U=画面の右, V=画面の上, N=その平面を正面から見る向き (右手系: U×V=N)
@@ -4320,7 +4450,24 @@ function makeLabel(text, color) {
 }
 const planeGroup = new THREE.Group(); scene.add(planeGroup);
 const planeMeshes = [];
-let planesOn = true;
+// 3つの平面の表示/非表示 (画面上部のチェックボックス)
+const planeShow = { XY: true, YZ: true, ZX: true };
+try { Object.assign(planeShow, JSON.parse(localStorage.getItem('m3d_planes') || '{}')); } catch (e) {}
+function applyPlaneVis() {
+  const drawing = sk && sk.stage === 'draw', ext = sk && sk.stage === 'extrude';
+  planeGroup.visible = !drawing;                                       // 作図中は出さない
+  planeMeshes.forEach(m => { const k = m.userData.plane; m.visible = ext ? k === sk.key : !!planeShow[k]; });   // 押し出し中は元の平面だけ
+  if (hlPlane && !planeShow[hlPlane]) highlightPlane(null);
+  requestRender();
+}
+$$('#planeChecks input').forEach(c => {
+  c.checked = !!planeShow[c.dataset.pl];
+  c.addEventListener('change', () => {
+    planeShow[c.dataset.pl] = c.checked;
+    try { localStorage.setItem('m3d_planes', JSON.stringify(planeShow)); } catch (e) {}
+    applyPlaneVis();
+  });
+});
 Object.keys(PLANES).forEach(key => {
   const P = PLANES[key], col = PLANE_COL[key];
   const m = new THREE.Mesh(new THREE.PlaneGeometry(120, 120),
@@ -4342,24 +4489,18 @@ function highlightPlane(key, cx, cy) {
     m.children[0].material.color.setHex(on ? 0xff7a00 : PLANE_COL[m.userData.plane]);
     m.scale.setScalar(on ? 1.04 : 1);
   });
-  const go = $('#planeGo');
-  go.hidden = !key;
-  if (key) {                                           // タップした位置のすぐ下に出す(画面からはみ出さないよう調整)
-    go.textContent = '✏ ' + key + '平面でスケッチ';
-    const r = stage.getBoundingClientRect(), w = go.offsetWidth, h = go.offsetHeight;
-    let x = (cx === undefined ? r.left + r.width / 2 : cx) - r.left, y = (cy === undefined ? r.top + 40 : cy) - r.top + 18;
-    x = Math.min(r.width - w / 2 - 6, Math.max(w / 2 + 6, x)); y = Math.min(r.height - h - 6, Math.max(6, y));
-    go.style.left = x + 'px'; go.style.top = y + 'px';
-  }
+  if (key) { clearFace(); showGo('✏ ' + key + '平面でスケッチ', cx, cy); }
+  else if (!hlFace) $('#planeGo').hidden = true;
   requestRender();
 }
-$('#planeGo').onclick = () => { if (hlPlane) startSketch(hlPlane); };
+$('#planeGo').onclick = () => { if (hlFace) startSketchOnFace(); else if (hlPlane) startSketch(hlPlane); };
 
 // スケッチ中のマウスポインタ: 鉛筆 + 右上に選択中の道具(長方形/円/多角形)のアイコン
 const CURSOR_ICON = {
   rect: '<rect x="31" y="6" width="14" height="10"/>',
   circle: '<circle cx="38" cy="11" r="7"/>',
   text: '<text x="28" y="17" font-family="Arial,sans-serif" font-size="14" font-weight="bold" textLength="19" lengthAdjust="spacingAndGlyphs" stroke-width="1">abc</text>',
+  axis: '<path d="M29 11H47" stroke-dasharray="6 2 2 2"/>',
   poly: '<polygon points="38,3 46,9 43,19 33,19 30,9"/>',
   curve: '<path d="M29 11C32 2 36 2 38 11S44 20 47 11"/>'
 };
@@ -4385,6 +4526,73 @@ function skCursor(tool) {
 function updateCursor() { cv.style.cursor = sk && sk.stage === 'draw' ? skCursor(sk.tool) : ''; }
 
 let sk = null;
+
+/* --- モデルの面でスケッチ: 面(同じ向きでつながった平らな部分)を選んでハイライトする --- */
+let hlFace = null;
+const faceGroup = new THREE.Group(); scene.add(faceGroup);
+function clearFace() { clearGroup(faceGroup); hlFace = null; if (!hlPlane) $('#planeGo').hidden = true; requestRender(); }
+function showGo(text, cx, cy) {                           // タップした位置のすぐ下に出す(画面からはみ出さないよう調整)
+  const go = $('#planeGo'); go.textContent = text; go.hidden = false;
+  const r = stage.getBoundingClientRect(), w = go.offsetWidth, h = go.offsetHeight;
+  let x = (cx === undefined ? r.left + r.width / 2 : cx) - r.left, y = (cy === undefined ? r.top + 40 : cy) - r.top + 18;
+  x = Math.min(r.width - w / 2 - 6, Math.max(w / 2 + 6, x)); y = Math.min(r.height - h - 6, Math.max(6, y));
+  go.style.left = x + 'px'; go.style.top = y + 'px';
+}
+function highlightFace(hit, cx, cy) {
+  clearFace();
+  const mesh = hit.object, t = worldTris(mesh), n = t.length / 9, fi = hit.faceIndex;
+  if (fi === undefined || fi < 0 || fi >= n) return;
+  const nrm = [], key = (x, y, z) => Math.round(x * 1000) + ',' + Math.round(y * 1000) + ',' + Math.round(z * 1000);
+  const vmap = new Map(), ok = new Uint8Array(n);
+  for (let i = 0; i < n; i++) {
+    const o = i * 9;
+    if (area2(t, o) < 1e-10) { nrm.push(null); continue; }
+    const ax = t[o + 3] - t[o], ay = t[o + 4] - t[o + 1], az = t[o + 5] - t[o + 2], bx = t[o + 6] - t[o], by = t[o + 7] - t[o + 1], bz = t[o + 8] - t[o + 2];
+    let nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx; const l = Math.hypot(nx, ny, nz);
+    nrm.push([nx / l, ny / l, nz / l]); ok[i] = 1;
+    for (let k = 0; k < 3; k++) { const kk = key(t[o + k * 3], t[o + k * 3 + 1], t[o + k * 3 + 2]); (vmap.get(kk) || vmap.set(kk, []).get(kk)).push(i); }
+  }
+  if (!ok[fi]) return;
+  const n0 = nrm[fi], p0 = [t[fi * 9], t[fi * 9 + 1], t[fi * 9 + 2]];
+  const coplanar = i => {
+    if (!ok[i]) return false; const m = nrm[i];
+    if (m[0] * n0[0] + m[1] * n0[1] + m[2] * n0[2] < 0.9995) return false;
+    for (let k = 0; k < 3; k++) { const o = i * 9 + k * 3; if (Math.abs(n0[0] * (t[o] - p0[0]) + n0[1] * (t[o + 1] - p0[1]) + n0[2] * (t[o + 2] - p0[2])) > 0.05) return false; }
+    return true;
+  };
+  const seen = new Set([fi]), q = [fi];
+  while (q.length) {
+    const i = q.pop();
+    for (let k = 0; k < 3; k++) {
+      const o = i * 9 + k * 3, list = vmap.get(key(t[o], t[o + 1], t[o + 2])) || [];
+      list.forEach(j => { if (!seen.has(j) && coplanar(j)) { seen.add(j); q.push(j); } });
+    }
+  }
+  // 面の向き(外向き)。X/Y/Zにそろった面は、きっちり軸の向きにする
+  const N = new V3(n0[0], n0[1], n0[2]);
+  ['x', 'y', 'z'].forEach(a => { if (Math.abs(N[a]) > 0.9999) { const s = Math.sign(N[a]); N.set(0, 0, 0); N[a] = s; } });
+  const ref = Math.abs(N.z) > 0.999 ? new V3(0, 1, 0) : new V3(0, 0, 1);
+  const Vv = ref.clone().sub(N.clone().multiplyScalar(ref.dot(N))).normalize(), Uu = new V3().crossVectors(Vv, N);
+  const P0 = hit.point.clone(); let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9; const pos = [];
+  seen.forEach(i => { for (let k = 0; k < 3; k++) {
+    const o = i * 9 + k * 3, p = new V3(t[o], t[o + 1], t[o + 2]), d = p.clone().sub(P0), u = d.dot(Uu), v = d.dot(Vv);
+    u0 = Math.min(u0, u); u1 = Math.max(u1, u); v0 = Math.min(v0, v); v1 = Math.max(v1, v);
+    pos.push(p.x + N.x * .08, p.y + N.y * .08, p.z + N.z * .08);
+  } });
+  const O = P0.clone().addScaledVector(Uu, (u0 + u1) / 2).addScaledVector(Vv, (v0 + v1) / 2);
+  const axis = ['x', 'y', 'z'].find(a => Math.abs(N[a]) === 1);
+  if (axis) ['x', 'y', 'z'].forEach(a => { if (a !== axis) O[a] = Math.round(O[a] / 5) * 5; });   // 原点を5mmのきりのいい位置に
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0xff7a00, transparent: true, opacity: .45, side: THREE.DoubleSide, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  m.renderOrder = 4; faceGroup.add(m);
+  hlFace = { O, U: Uu, V: Vv, N };
+  showGo('✏ この面でスケッチ', cx, cy);
+  requestRender();
+}
+function startSketchOnFace() {
+  const f = hlFace; if (!f) return;
+  startSketch('FACE', { O: f.O.clone(), U: f.U.clone(), V: f.V.clone(), N: f.N.clone(), hint: 'モデルの面を正面から見た図' });
+}
 const skGroup = new THREE.Group(), pvGroup = new THREE.Group(); scene.add(skGroup); scene.add(pvGroup);
 const skLine = new THREE.LineBasicMaterial({ color: 0xff7a00, depthTest: false });
 const skDraft = new THREE.LineBasicMaterial({ color: 0x2f6fed, depthTest: false });
@@ -4396,7 +4604,8 @@ const skDot = new THREE.PointsMaterial({ color: 0xff7a00, size: 9, sizeAttenuati
 const skPlane = new THREE.Plane();
 const skPtrs = new Set();
 function clearGroup(g) { g.children.slice().forEach(c => { g.remove(c); c.traverse(o => { if (o.geometry) o.geometry.dispose(); }); }); }
-const skW = (u, v) => sk.U.clone().multiplyScalar(u).add(sk.V.clone().multiplyScalar(v)).add(sk.N.clone().multiplyScalar(sk.off));
+const skW = (u, v) => sk.O.clone().add(sk.U.clone().multiplyScalar(u)).add(sk.V.clone().multiplyScalar(v)).add(sk.N.clone().multiplyScalar(sk.off));
+const skRel = p => p.clone().sub(sk.O);
 const skQ = () => new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(sk.U, sk.V, sk.N));
 const snapV = v => snapOn ? Math.round(v / 5) * 5 : Math.round(v * 10) / 10;
 function shapePts(sh) {
@@ -4443,15 +4652,15 @@ function redrawSketch() {
   if (!sk) return;
   if (sk.stage === 'draw') {
     const gg = new THREE.GridHelper(400, 40, 0x6f7fa8, 0xc0c9df); gg.rotation.x = Math.PI / 2;
-    const w = new THREE.Group(); w.add(gg); w.quaternion.copy(skQ()); w.position.copy(sk.N).multiplyScalar(sk.off); skGroup.add(w);
+    const w = new THREE.Group(); w.add(gg); w.quaternion.copy(skQ()); w.position.copy(sk.O).addScaledVector(sk.N, sk.off); skGroup.add(w);
   }
-  const wsh = sk.stage === 'extrude' ? sk.shift : 0, hot = sk.stage === 'extrude' && sk.hot === 'S';   // 押し出し中は、開始位置にスケッチを描く
+  const wsh = sk.stage === 'extrude' && sk.kind !== 'revolve' ? sk.shift : 0, hot = sk.stage === 'extrude' && sk.hot === 'S';   // 押し出し中は、開始位置にスケッチを描く
   const addShape = (pts, mat, fill) => {
     const lift = sk.N.clone().multiplyScalar(wsh);
     const l = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts.map(p => skW(p[0], p[1]).add(lift))), mat); l.renderOrder = 6; skGroup.add(l);
     if (fill) {
       const f = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(pts.map(p => new THREE.Vector2(p[0], p[1])))), skFillMat);
-      f.quaternion.copy(skQ()); f.position.copy(sk.N).multiplyScalar(sk.off + wsh); f.renderOrder = 5; skGroup.add(f);
+      f.quaternion.copy(skQ()); f.position.copy(sk.O).addScaledVector(sk.N, sk.off + wsh); f.renderOrder = 5; skGroup.add(f);
     }
   };
   const selGrp = sk.sel != null && sk.shapes[sk.sel] ? sk.shapes[sk.sel].grp : undefined;      // 文字は全体をまとめて強調
@@ -4459,7 +4668,12 @@ function redrawSketch() {
   if (wsh) sk.shapes.forEach(sh => {                       // 開始位置をずらしたら、元のスケッチの輪郭も残して見せる
     const l = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(shapePts(sh).map(p => skW(p[0], p[1]))), skLine); l.renderOrder = 6; skGroup.add(l);
   });
-  if (sk.draft) addShape(shapePts(sk.draft), skDraft, false);
+  const axLine = (a, b, mat) => {
+    const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints([skW(a[0], a[1]), skW(b[0], b[1])]), mat); l.computeLineDistances(); l.renderOrder = 8; skGroup.add(l);
+  };
+  if (sk.axis) axLine(sk.axis.a, sk.axis.b, skAxisMat);                 // 中心線(一点鎖線ふう)
+  if (sk.draft && sk.draft.type === 'axis') axLine(sk.draft.a, sk.draft.b, skAxisMat);
+  else if (sk.draft) addShape(shapePts(sk.draft), skDraft, false);
   if (sk.poly && sk.poly.length) {
     const raw = sk.poly.concat(sk.cursor ? [sk.cursor] : []);
     const pts = (sk.tool === 'curve' && raw.length >= 3 ? splinePts(raw, false, 14) : raw).map(p => skW(p[0], p[1]));
@@ -4473,6 +4687,7 @@ const f1 = v => String(+v.toFixed(1));
 function updateHud() {
   const d = sk.draft;
   if (d && d.type === 'rect') hud('幅 ' + f1(Math.abs(d.b[0] - d.a[0])) + ' × 高さ ' + f1(Math.abs(d.b[1] - d.a[1])) + ' mm');
+  else if (d && d.type === 'axis') hud('中心線 長さ ' + f1(Math.hypot(d.b[0] - d.a[0], d.b[1] - d.a[1])) + ' mm');
   else if (d && d.type === 'circle') hud('半径 ' + f1(d.r) + ' mm (直径 ' + f1(d.r * 2) + ')');
   else if (sk.poly && sk.poly.length && sk.cursor) { const l = sk.poly[sk.poly.length - 1]; hud('点 ' + sk.poly.length + '個　この辺の長さ ' + f1(Math.hypot(sk.cursor[0] - l[0], sk.cursor[1] - l[1])) + ' mm'); }
   else hud(null);
@@ -4480,16 +4695,18 @@ function updateHud() {
 function pickUV(e) {
   const r = cv.getBoundingClientRect();
   ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
-  skPlane.setFromNormalAndCoplanarPoint(sk.N, sk.N.clone().multiplyScalar(sk.off));
+  skPlane.setFromNormalAndCoplanarPoint(sk.N, sk.O.clone().addScaledVector(sk.N, sk.off));
   const p = ray.ray.intersectPlane(skPlane, new V3());
-  return p ? [snapV(p.dot(sk.U)), snapV(p.dot(sk.V))] : null;
+  if (!p) return null; const d = skRel(p);
+  return [snapV(d.dot(sk.U)), snapV(d.dot(sk.V))];
 }
 function rawUV(e) {
   const r = cv.getBoundingClientRect();
   ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
-  skPlane.setFromNormalAndCoplanarPoint(sk.N, sk.N.clone().multiplyScalar(sk.off));
+  skPlane.setFromNormalAndCoplanarPoint(sk.N, sk.O.clone().addScaledVector(sk.N, sk.off));
   const p = ray.ray.intersectPlane(skPlane, new V3());
-  return p ? [p.dot(sk.U), p.dot(sk.V)] : null;
+  if (!p) return null; const d = skRel(p);
+  return [d.dot(sk.U), d.dot(sk.V)];
 }
 // 消しゴム: ポインタの下にある図形(内側 or 輪郭の近く)を探す。重なっていれば一番小さい図形
 function hitShape(e) {
@@ -4519,6 +4736,11 @@ function hitShape(e) {
   }
   return best;
 }
+function nearAxis(e) {
+  const a = uvToClient(sk.axis.a), b = uvToClient(sk.axis.b), dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy;
+  const t = l2 ? Math.max(0, Math.min(1, ((e.clientX - a[0]) * dx + (e.clientY - a[1]) * dy) / l2)) : 0;
+  return Math.hypot(e.clientX - (a[0] + t * dx), e.clientY - (a[1] + t * dy)) < 12;
+}
 function uvToClient(q) {
   const v = skW(q[0], q[1]).project(camera), r = cv.getBoundingClientRect();
   return [r.left + (v.x + 1) / 2 * r.width, r.top + (1 - v.y) / 2 * r.height];
@@ -4526,6 +4748,7 @@ function uvToClient(q) {
 const TOOL_HINT = {
   erase: '消したい図形をタップ(クリック)',
   text: '文字を入力して、置きたい場所をタップ(クリック)。置いたあとも左下の表で直せます',
+  axis: '回転の中心にする線を、ドラッグしてかこう(中心線は1本だけ)',
   rect: 'ドラッグして長方形をかこう',
   circle: '中心から外へドラッグして円をかこう',
   poly: '角をタップしていき、最初の点をタップ(か「図形をとじる」)で完成',
@@ -4535,8 +4758,8 @@ function refreshSkButtons() {
   if (!sk) return;
   const polyN = sk.poly ? sk.poly.length : 0;
   $('#skClose').disabled = polyN < 3;
-  $('#skUndo').disabled = !(polyN || sk.shapes.length);
-  $('#skNext').disabled = !(sk.shapes.length || polyN >= 3);
+  $('#skUndo').disabled = !(polyN || sk.shapes.length || sk.axis);
+  $('#skNext').disabled = $('#skRev').disabled = !(sk.shapes.length || polyN >= 3);
   refreshParams();
   $('#skHint').textContent = TOOL_HINT[sk.tool] + (sk.shapes.length ? '　(図形 ' + sk.shapes.length + '個)' : '');
 }
@@ -4555,32 +4778,31 @@ function closePoly() {
   return true;
 }
 // 押し出し中は、元のスケッチ平面(XY/YZ/ZX)だけを半透明で表示する
-function showOriginPlane(on) {
-  planeMeshes.forEach(m => { m.visible = on ? m.userData.plane === sk.key : true; });
-  planeGroup.visible = on;
-}
+function showOriginPlane() { applyPlaneVis(); }
+const planeName = () => sk.key === 'FACE' ? 'モデルの面' : sk.key + '平面';
 function showStage(st) {
   sk.stage = st; updateCursor();
-  showOriginPlane(st === 'extrude');
+  showOriginPlane();
   refreshParams();
   $('#drawBox').hidden = st !== 'draw'; $('#extBox').hidden = st !== 'extrude';
-  const P = PLANES[sk.key];
-  $('#skTitle').textContent = st === 'draw' ? '✏ ' + sk.key + '平面でスケッチ中 (' + P.hint + ')' : '⬆ 押し出して立体にする';
+  $('#skTitle').textContent = st === 'draw' ? '✏ ' + planeName() + 'でスケッチ中 (' + sk.hint + ')' : '⬆ 押し出して立体にする';
 }
 function skView() {
-  const t = sk.N.clone().multiplyScalar(sk.off), s = sk;
+  const t = sk.O.clone().addScaledVector(sk.N, sk.off), s = sk;
   orbit.enableRotate = false; orbit.touches = { ONE: -1, TWO: THREE.TOUCH.DOLLY_PAN };
   s.flying = true;                                    // 平面へゆっくり回り込む間は、かけないようにする
   flyTo(t.clone().add(sk.N.clone().multiplyScalar(500)), sk.V.clone(), t, 1, 700, () => { s.flying = false; });
 }
-function startSketch(key) {
-  highlightPlane(null); cancelOp(); select(null);
-  const P = PLANES[key];
-  sk = { key, U: new V3(...P.U), V: new V3(...P.V), N: new V3(...P.N), off: 0, shift: 0, shapes: [], tool: 'rect', draft: null, poly: null,
-    cursor: null, down: null, texts: [], tid: 0, stage: 'draw', dist: 30, dir: 'pos', mode: 'new' };
+function startSketch(key, custom) {
+  highlightPlane(null); $('#planeGo').hidden = true; cancelOp(); select(null); $('#app').classList.add('sketching');
+  const P = custom || PLANES[key];
+  const vec = a => (a instanceof V3 ? a.clone() : new V3(...a));
+  sk = { key, hint: P.hint, O: custom ? custom.O.clone() : new V3(), U: vec(P.U), V: vec(P.V), N: vec(P.N), off: 0, shift: 0, shapes: [], tool: 'rect', draft: null, poly: null,
+    cursor: null, down: null, texts: [], tid: 0, axis: null, kind: 'extrude', angle: 360, stage: 'draw', dist: 30, dir: 'pos', mode: 'new' };
   skPtrs.clear();
   $('#panel').hidden = true; $('#sketchPanel').hidden = false; $('#views').style.display = 'none';
-  planeGroup.visible = false; grid.visible = false;
+  grid.visible = false;
+  $('#extParams').hidden = false; $('#revParams').hidden = true; $('#rvA').value = 360; $('#rvR').value = 360;
   $('#exOff').value = 0; $('#exOffR').value = 0; $('#exD').value = 30; $('#exR').value = 30;
   $$('#exDir button').forEach(x => x.classList.toggle('on', x.dataset.dir === 'pos'));
   $$('#exMode button').forEach(x => x.classList.toggle('on', x.dataset.mode === 'new'));
@@ -4588,12 +4810,11 @@ function startSketch(key) {
   showStage('draw'); setTool('rect'); skView();
 }
 function endSketch(keepCamera) {
-  clearGroup(skGroup); clearGroup(pvGroup); clearArrows(); $('#skParams').hidden = true;
+  clearGroup(skGroup); clearGroup(pvGroup); clearArrows(); clearFace(); $('#skParams').hidden = true; $('#app').classList.remove('sketching');
   $('#panel').hidden = false; $('#sketchPanel').hidden = true; $('#views').style.display = '';
-  planeMeshes.forEach(m => { m.visible = true; });
-  planeGroup.visible = planesOn; grid.visible = true;
+  grid.visible = true;
   orbit.enableRotate = true; orbit.touches = TOUCHES_DEF;
-  hud(null); sk = null; skPtrs.clear(); updateCursor();
+  hud(null); sk = null; skPtrs.clear(); updateCursor(); applyPlaneVis();
   if (keepCamera) camera.up.set(0, 0, 1);
   else { orbit.target.set(0, 0, 15); setView('iso'); }
   requestRender();
@@ -4610,6 +4831,7 @@ cv.addEventListener('pointerdown', e => {
   if (sk.tool === 'erase') { sk.sel = hitShape(e); if (sk.sel < 0) sk.sel = null; redrawSketch(); return; }
   if (sk.tool === 'rect') sk.draft = { type: 'rect', a: q, b: q };
   else if (sk.tool === 'circle') sk.draft = { type: 'circle', c: q, r: 0 };
+  else if (sk.tool === 'axis') sk.draft = { type: 'axis', a: q, b: q };
   redrawSketch();
 });
 cv.addEventListener('pointermove', e => {
@@ -4617,7 +4839,7 @@ cv.addEventListener('pointermove', e => {
   const q = pickUV(e); if (!q) return;
   if (sk.tool === 'erase') { const i = hitShape(e), v = i < 0 ? null : i; if (v !== sk.sel) { sk.sel = v; redrawSketch(); } return; }
   if (sk.draft && sk.down) {
-    if (sk.draft.type === 'rect') sk.draft.b = q;
+    if (sk.draft.type === 'rect' || sk.draft.type === 'axis') sk.draft.b = q;
     else { const st = snapOn ? 2.5 : .1; sk.draft.r = Math.round(Math.hypot(q[0] - sk.draft.c[0], q[1] - sk.draft.c[1]) / st) * st; }
   } else if ((sk.tool === 'poly' || sk.tool === 'curve') && sk.poly && sk.poly.length) sk.cursor = q; else return;
   updateHud(); redrawSketch();
@@ -4631,8 +4853,13 @@ function skUp(e, cancel) {
   else if (sk.tool === 'erase') {
     const i = hitShape(e);
     if (i >= 0 && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 10) { removeShape(i); sk.sel = null; }
+    else if (i < 0 && sk.axis && nearAxis(e)) sk.axis = null;           // 中心線も消しゴムで消せる
   } else if (sk.tool === 'text') {
     if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 10) placeText(d.q);
+  } else if (sk.tool === 'axis' && sk.draft) {
+    const a = sk.draft.a, b = sk.draft.b;
+    if (Math.hypot(a[0] - b[0], a[1] - b[1]) >= 1) sk.axis = { a, b };
+    sk.draft = null;
   } else if (sk.tool === 'rect' && sk.draft) {
     const a = sk.draft.a, b = sk.draft.b;
     if (Math.abs(a[0] - b[0]) >= 1 && Math.abs(a[1] - b[1]) >= 1) sk.shapes.push(sk.draft);
@@ -4658,7 +4885,7 @@ function extrusionParts() {
   const inside = (p, q) => p.every(pt => pointInPoly(pt, q));
   const depth = polys.map((p, i) => polys.reduce((n, q, j) => n + (j !== i && inside(p, q) ? 1 : 0), 0));
   const d = sk.dist, w0 = sk.dir === 'pos' ? 0 : sk.dir === 'neg' ? -d : -d / 2;
-  const M = new THREE.Matrix4().makeBasis(sk.U, sk.V, sk.N).setPosition(sk.N.clone().multiplyScalar(sk.off + sk.shift));
+  const M = new THREE.Matrix4().makeBasis(sk.U, sk.V, sk.N).setPosition(sk.O.clone().addScaledVector(sk.N, sk.off + sk.shift));
   const v2 = pts => pts.map(p => new THREE.Vector2(p[0], p[1])), parts = [];
   polys.forEach((pts, i) => {
     if (depth[i] % 2) return;                                  // 囲まれた図形は穴になる
@@ -4676,7 +4903,7 @@ function updatePreview() {
   requestAnimationFrame(() => {
     pvQueued = false; clearGroup(pvGroup);
     if (!sk || sk.stage !== 'extrude') return;
-    const parts = extrusionParts(); if (!parts.length) return;
+    const parts = buildParts(); if (!parts.length) return;
     const all = new Float32Array(parts.reduce((n, p) => n + p.length, 0)); let o = 0; parts.forEach(p => { all.set(p, o); o += p.length; });
     const g = geoFromArray(all);
     pvGroup.add(new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: sk.mode === 'cut' ? 0xff4a4a : currentColor, transparent: true, opacity: .6, roughness: .6 })));
@@ -4684,11 +4911,13 @@ function updatePreview() {
     updateArrows(); requestRender();
   });
 }
-function toExtrude() {
+function toExtrude(kind) {
+  kind = kind || 'extrude';
   if (sk.poly && sk.poly.length >= 3) closePoly();
   sk.poly = null; sk.cursor = null; sk.draft = null;
   if (!sk.shapes.length) { toast('先に図形をかいてね'); redrawSketch(); return; }
   if (sk.shapes.some(sh => !sh.grp && (sh.type === 'poly' || sh.type === 'curve') && !polySimple(shapePts(sh)))) { toast('線が交差しているよ。点の位置を直してね'); return; }
+  if (kind === 'revolve' && !sk.axis) { toast('先に「┅ 中心線」をかいてね(回転の軸になります)', 4500); redrawSketch(); return; }
   showStage('extrude'); hud(null); grid.visible = true; sk.flying = false;
   const bb = new THREE.Box3();
   let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9;
@@ -4698,14 +4927,15 @@ function toExtrude() {
   const c = bb.getCenter(new V3()), r = bb.getSize(new V3()).length();
   orbit.enableRotate = true; orbit.touches = TOUCHES_DEF;
   flyTo(c.clone().add(new V3(1, -1.3, .9).normalize().multiplyScalar(500)), new V3(0, 0, 1), c, Math.min(8, Math.max(.2, VIEW_H / (r * 1.6))), 700);
-  redrawSketch(); updatePreview();
+  setKind(kind);
 }
 function backToDraw() { clearGroup(pvGroup); clearArrows(); grid.visible = false; showStage('draw'); skView(); redrawSketch(); refreshSkButtons(); }
 function boxOfTris(t) { const b = new THREE.Box3(), v = new V3(); for (let i = 0; i < t.length; i += 3) b.expandByPoint(v.set(t[i], t[i + 1], t[i + 2])); return b; }
 function extrudeOk() {
-  const parts = extrusionParts(), mode = sk.mode;
-  if (!parts.length) return;
-  const label = sk.key + '平面スケッチ → 押し出し ' + f1(sk.dist) + 'mm (' + { new: '新しい立体', join: 'くっつける', cut: 'くりぬく' }[mode] + ')';
+  const parts = buildParts(), mode = sk.mode;
+  if (!parts.length) { toast(sk.kind === 'revolve' ? (sk.revErr || '回転できる図形がありません') : '図形がありません', 4500); return; }
+  const label = (sk.key === 'FACE' ? '面' : sk.key + '平面') + 'スケッチ → ' + (sk.kind === 'revolve' ? '回転押し出し ' + f1(sk.angle) + '°' : '押し出し ' + f1(sk.dist) + 'mm') + ' (' + { new: '新しい立体', join: 'くっつける', cut: 'くりぬく' }[mode] + ')';
+  const def = packSketch(), editIndex = sk.editIndex;          // 手順に保存しておく(あとで開き直せる)
   endSketch(true);
   $('#busy').hidden = false;
   setTimeout(() => {
@@ -4730,20 +4960,21 @@ function extrudeOk() {
         select(addMeshFromWorld(cutter, currentColor));
         toast(mode === 'join' ? '重なる立体がないので、新しい立体にしたよ' : '立体ができたよ！');
       }
-      commit(label);
+      if (editIndex !== undefined) hi = editIndex - 1;          // 手順を直した場合は、その手順から作り直す
+      commit(label, { sketch: def });
     } catch (e) { console.error(e); toast('うまく計算できなかったよ'); }
     finally { $('#busy').hidden = true; }
   }, 30);
 }
 
 /* --- スケッチ画面のボタン --- */
-$('#planeBtns').addEventListener('click', e => { const b = e.target.closest('button'); if (b) startSketch(b.dataset.plane); });
 $('#skTools').addEventListener('click', e => { const b = e.target.closest('button'); if (b && sk) setTool(b.dataset.tool); });
 $('#skClose').onclick = () => { if (sk && closePoly()) { redrawSketch(); refreshSkButtons(); } };
 $('#skUndo').onclick = () => {
   if (!sk) return;
   if (sk.poly && sk.poly.length) { sk.poly.pop(); if (!sk.poly.length) sk.poly = null; }
-  else removeShape(sk.shapes.length - 1);
+  else if (sk.shapes.length) removeShape(sk.shapes.length - 1);
+  else sk.axis = null;
   sk.cursor = null; hud(null); redrawSketch(); refreshSkButtons();
 };
 $('#skSnap').onclick = e => {
@@ -4761,7 +4992,8 @@ function setShift(v, from) {
 $('#exOff').addEventListener('input', e => setShift(parseFloat(e.target.value), 'n'));
 $('#exOffR').addEventListener('input', e => setShift(parseFloat(e.target.value), 'r'));
 $('#skCancel').onclick = () => { if (sk) endSketch(false); };
-$('#skNext').onclick = () => { if (sk) toExtrude(); };
+$('#skNext').onclick = () => { if (sk) toExtrude('extrude'); };
+$('#skRev').onclick = () => { if (sk) toExtrude('revolve'); };
 $('#exBack').onclick = () => { if (sk) backToDraw(); };
 $('#exOk').onclick = () => { if (sk) extrudeOk(); };
 function setDist(v) {
@@ -4782,12 +5014,12 @@ $('#exMode').addEventListener('click', e => {
 $$('#sketchPanel input[type=number]').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') i.blur(); }));
 
 /* --- 図形のパラメータ表 (左下) : 数値を直接編集できる --- */
-const AXN = { XY: ['X', 'Y'], YZ: ['Y', 'Z'], ZX: ['X', 'Z'] };
+const AXN = { XY: ['X', 'Y'], YZ: ['Y', 'Z'], ZX: ['X', 'Z'], FACE: ['横', '縦'] };
 const fv = v => String(+(+v).toFixed(2));
 let paramsMin = window.matchMedia('(max-width:640px)').matches;   // スマホでは最初は たたんでおく(作図の邪魔にならないように)
 function refreshParams() {
   const box = $('#skParams');
-  if (!sk || sk.stage !== 'draw' || !sk.shapes.length) { box.hidden = true; box.innerHTML = ''; return; }
+  if (!sk || sk.stage !== 'draw' || !(sk.shapes.length || sk.axis)) { box.hidden = true; box.innerHTML = ''; return; }
   const [ax, ay] = AXN[sk.key];
   const num = (i, k, label, v, extra) => '<label>' + label + '<input type="number" inputmode="decimal" step="1" data-i="' + i + '" data-k="' + k + '"' + (extra || '') + ' value="' + fv(v) + '"></label>';
   let h = '<div class="pt" id="ptToggle">📐 スケッチの数値 (mm) <span class="pc">' + (paramsMin ? '▸ ひらく' : '▾ たたむ') + '</span></div>';
@@ -4808,6 +5040,11 @@ function refreshParams() {
           '<input type="number" inputmode="decimal" step="1" data-i="' + i + '" data-p="' + j + '" data-k="1" value="' + fv(p[1]) + '" aria-label="点' + (j + 1) + ' ' + ay + '">').join('') + '</div></div>';
     }
   });
+  if (sk.axis) {
+    const an = (k, label, v) => '<label>' + label + '<input type="number" inputmode="decimal" step="1" data-ax="' + k + '" value="' + fv(v) + '"></label>';
+    h += '<div class="pr"><div class="ph"><b>┅ 中心線</b><button class="px" data-axdel="1">✕</button></div><div class="pg">' +
+      an('a0', '始点 ' + ax, sk.axis.a[0]) + an('a1', '始点 ' + ay, sk.axis.a[1]) + an('b0', '終点 ' + ax, sk.axis.b[0]) + an('b1', '終点 ' + ay, sk.axis.b[1]) + '</div></div>';
+  }
   sk.texts.forEach(tx => {
     const n = (k, label, v) => '<label>' + label + '<input type="number" inputmode="decimal" step="1" data-t="' + tx.id + '" data-k="' + k + '" value="' + fv(v) + '"></label>';
     h += '<div class="pr"><div class="ph"><b>abc… 文字</b><button class="px" data-tdel="' + tx.id + '">✕</button></div>' +
@@ -4818,6 +5055,10 @@ function refreshParams() {
 }
 $('#skParams').addEventListener('input', e => {
   const t = e.target; if (!sk || t.tagName !== 'INPUT') return;
+  if (t.dataset.ax !== undefined) {                         // 中心線の行
+    const nv = parseFloat(t.value); if (!isFinite(nv) || !sk.axis) return;
+    sk.axis[t.dataset.ax[0]][+t.dataset.ax[1]] = nv; redrawSketch(); updatePreview(); return;
+  }
   if (t.dataset.t !== undefined) {                          // 文字の行: 入力するたびに輪郭を作り直す
     const tx = sk.texts.find(q => q.id === +t.dataset.t); if (!tx) return;
     const k = t.dataset.k;
@@ -4849,6 +5090,7 @@ $('#skParams').addEventListener('focusin', e => { if (sk && e.target.dataset && 
 $('#skParams').addEventListener('focusout', e => { if (sk && !$('#skParams').contains(e.relatedTarget)) { sk.sel = null; redrawSketch(); } });
 $('#skParams').addEventListener('click', e => {
   const b = e.target.closest('.px'); if (!b || !sk) return;
+  if (b.dataset.axdel !== undefined) { sk.axis = null; sk.sel = null; redrawSketch(); refreshSkButtons(); return; }
   if (b.dataset.tdel !== undefined) { const id = +b.dataset.tdel; sk.shapes = sk.shapes.filter(s => s.grp !== id); sk.texts = sk.texts.filter(t => t.id !== id); }
   else removeShape(+b.dataset.del);
   sk.sel = null; redrawSketch(); refreshSkButtons();
@@ -4869,7 +5111,7 @@ function armW() {
 }
 function updateArrows() {
   clearGroup(arGroup); arHandles = [];
-  if (!sk || sk.stage !== 'extrude') return;
+  if (!sk || sk.stage !== 'extrude' || sk.kind === 'revolve') return;
   const g = armW(), p = pxSize();
   const mk = (id, uv, root, tip) => {
     const N = sk.N, base = skW(uv[0], uv[1]);
@@ -4921,9 +5163,10 @@ function hitSketch(e) {
   }
   if (!near) return null;
   ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
-  skPlane.setFromNormalAndCoplanarPoint(sk.N, sk.N.clone().multiplyScalar(sk.off + sk.shift));
+  skPlane.setFromNormalAndCoplanarPoint(sk.N, sk.O.clone().addScaledVector(sk.N, sk.off + sk.shift));
   const p = ray.ray.intersectPlane(skPlane, new V3()); if (!p) return null;
-  return [p.dot(sk.U), p.dot(sk.V)];
+  const d = skRel(p);
+  return [d.dot(sk.U), d.dot(sk.V)];
 }
 function pickHandle(e) {
   const r = cv.getBoundingClientRect(); let best = null, bd = 30;
@@ -4944,7 +5187,7 @@ function axisT(e, base) {
   return (b * d2.dot(w0) - d1.dot(w0)) / den;
 }
 cv.addEventListener('pointerdown', e => {
-  if (!sk || sk.stage !== 'extrude' || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  if (!sk || sk.stage !== 'extrude' || sk.kind === 'revolve' || (e.pointerType === 'mouse' && e.button !== 0)) return;
   let h = pickHandle(e);
   if (!h) { const q = hitSketch(e); if (!q) return; h = { id: 'S', base: skW(q[0], q[1]), tip: sk.shift }; }   // スケッチ面そのものをつかむ
   const t = axisT(e, h.base); if (t === null) return;
@@ -4955,7 +5198,7 @@ cv.addEventListener('pointerdown', e => {
   orbit.enabled = false;
 }, true);
 cv.addEventListener('pointermove', e => {
-  if (!sk || sk.stage !== 'extrude') return;
+  if (!sk || sk.stage !== 'extrude' || sk.kind === 'revolve') return;
   if (!arDrag) {                                           // ポインタを乗せたら矢印をハイライト
     const h = pickHandle(e), id = h ? h.id : (hitSketch(e) ? 'S' : null);
     if (id !== sk.hot) { sk.hot = id; updateArrows(); redrawSketch(); }
@@ -4978,6 +5221,104 @@ function arUp(e) {
 }
 cv.addEventListener('pointerup', arUp);
 cv.addEventListener('pointercancel', arUp);
+
+/* --- 中心線まわりの回転押し出し --- */
+const skAxisMat = new THREE.LineDashedMaterial({ color: 0xd946ef, dashSize: 6, gapSize: 3, depthTest: false });
+function revolveParts() {
+  sk.revErr = '';
+  if (!sk.axis) { sk.revErr = '先に「中心線」をかいてください'; return []; }
+  const a = sk.axis.a, b = sk.axis.b; let dx = b[0] - a[0], dy = b[1] - a[1];
+  const L = Math.hypot(dx, dy); if (L < 1e-6) { sk.revErr = '中心線が短すぎます'; return []; }
+  dx /= L; dy /= L; let nx = -dy, ny = dx;
+  const polys = sk.shapes.map(shapePts);
+  if (!polys.length) return [];
+  let pos = false, neg = false;
+  polys.forEach(pts => pts.forEach(p => { const s = (p[0] - a[0]) * nx + (p[1] - a[1]) * ny; if (s > 1e-6) pos = true; if (s < -1e-6) neg = true; }));
+  if (pos && neg) { sk.revErr = '図形が中心線をまたいでいます。中心線の片側にかいてください'; return []; }
+  if (neg) { nx = -nx; ny = -ny; }
+  const toTS = p => [(p[0] - a[0]) * dx + (p[1] - a[1]) * dy, Math.max(0, (p[0] - a[0]) * nx + (p[1] - a[1]) * ny)];
+  const A3 = skW(a[0], a[1]), D3 = sk.U.clone().multiplyScalar(dx).add(sk.V.clone().multiplyScalar(dy)),
+    R3 = sk.U.clone().multiplyScalar(nx).add(sk.V.clone().multiplyScalar(ny)), B3 = new V3().crossVectors(D3, R3);
+  const P3 = (t, s, th) => A3.clone().addScaledVector(D3, t).addScaledVector(R3, s * Math.cos(th)).addScaledVector(B3, s * Math.sin(th));
+  const ang = Math.min(360, Math.max(1, sk.angle)) * Math.PI / 180, full = sk.angle >= 359.99;
+  const steps = full ? 72 : Math.max(4, Math.ceil(sk.angle / 5)), dth = ang / steps;
+  const inside = (p, q) => p.every(pt => pointInPoly(pt, q));
+  const depth = polys.map((p, i) => polys.reduce((n, q, j) => n + (j !== i && inside(p, q) ? 1 : 0), 0));
+  const area = l => { let s = 0; for (let i = 0; i < l.length; i++) { const p = l[i], q = l[(i + 1) % l.length]; s += p[0] * q[1] - q[0] * p[1]; } return s / 2; };
+  const parts = [];
+  polys.forEach((pts, i) => {
+    if (depth[i] % 2) return;
+    const loops = [{ ts: pts.map(toTS), hole: false }];
+    polys.forEach((h, j) => { if (depth[j] === depth[i] + 1 && inside(h, pts)) loops.push({ ts: h.map(toTS), hole: true }); });
+    loops.forEach(l => { const ar = area(l.ts); if ((ar > 0) === l.hole) l.ts.reverse(); });      // 外側=反時計回り / 穴=時計回り
+    const out = [], push = (p, q, r) => out.push(p.x, p.y, p.z, q.x, q.y, q.z, r.x, r.y, r.z);
+    loops.forEach(l => {
+      const n = l.ts.length;
+      for (let k = 0; k < n; k++) {
+        const p = l.ts[k], q = l.ts[(k + 1) % n];
+        for (let j = 0; j < steps; j++) {
+          const v00 = P3(p[0], p[1], j * dth), v10 = P3(q[0], q[1], j * dth), v11 = P3(q[0], q[1], (j + 1) * dth), v01 = P3(p[0], p[1], (j + 1) * dth);
+          push(v00, v10, v11); push(v00, v11, v01);
+        }
+      }
+    });
+    if (!full) {                                                  // 途中までの回転は、両端にふたをする
+      const outer = loops[0].ts.map(p => new THREE.Vector2(p[0], p[1])), holes = loops.slice(1).map(l => l.ts.map(p => new THREE.Vector2(p[0], p[1])));
+      const all = outer.concat(...holes), tris = THREE.ShapeUtils.triangulateShape(outer.map(v => v.clone()), holes.map(h => h.map(v => v.clone())));
+      const tEnd = R3.clone().multiplyScalar(-Math.sin(ang)).addScaledVector(B3, Math.cos(ang));
+      const cap = (th, want) => tris.forEach(tr => {
+        const q = tr.map(ix => P3(all[ix].x, all[ix].y, th)), nn = new V3().crossVectors(q[1].clone().sub(q[0]), q[2].clone().sub(q[0]));
+        if (nn.dot(want) < 0) push(q[0], q[2], q[1]); else push(q[0], q[1], q[2]);
+      });
+      cap(0, B3.clone().negate()); cap(ang, tEnd);
+    }
+    const arr = Float32Array.from(out);
+    let vol = 0; for (let k = 0; k < arr.length; k += 9) {      // 全体の向きが内向きなら反転
+      vol += arr[k] * (arr[k + 4] * arr[k + 8] - arr[k + 5] * arr[k + 7]) - arr[k + 1] * (arr[k + 3] * arr[k + 8] - arr[k + 5] * arr[k + 6]) + arr[k + 2] * (arr[k + 3] * arr[k + 7] - arr[k + 4] * arr[k + 6]);
+    }
+    if (vol < 0) for (let k = 0; k < arr.length; k += 9) for (let c = 0; c < 3; c++) { const t = arr[k + 3 + c]; arr[k + 3 + c] = arr[k + 6 + c]; arr[k + 6 + c] = t; }
+    const keep = []; for (let k = 0; k < arr.length; k += 9) if (area2(arr, k) > 1e-12) for (let c = 0; c < 9; c++) keep.push(arr[k + c]);
+    if (keep.length) parts.push(Float32Array.from(keep));
+  });
+  return parts;
+}
+const buildParts = () => sk.kind === 'revolve' ? revolveParts() : extrusionParts();
+function setKind(k) {
+  sk.kind = k;
+  $('#skTitle').textContent = k === 'revolve' ? '⟳ 中心線まわりに回転して立体にする' : '⬆ まっすぐ押し出して立体にする';
+  $('#extParams').hidden = k === 'revolve'; $('#revParams').hidden = k !== 'revolve';
+  if (k === 'revolve') { clearArrows(); const p = revolveParts(); if (!p.length && sk.revErr) toast(sk.revErr, 4500); }
+  redrawSketch(); updatePreview();
+}
+function setAngle(v, from) {
+  if (!sk) return;
+  v = Math.min(360, Math.max(1, isFinite(v) ? v : 360)); sk.angle = v;
+  if (from !== 'n') $('#rvA').value = +v.toFixed(1);
+  if (from !== 'r') $('#rvR').value = v;
+  updatePreview();
+}
+$('#rvA').addEventListener('input', e => setAngle(parseFloat(e.target.value), 'n'));
+$('#rvR').addEventListener('input', e => setAngle(parseFloat(e.target.value), 'r'));
+$$('#rvPresets button').forEach(b => b.onclick = () => setAngle(+b.dataset.a));
+
+/* --- 手順の再編集: 保存してあるスケッチと押し出しの設定を、もう一度開く --- */
+function packSketch() {
+  const clean = JSON.parse(JSON.stringify({ shapes: sk.shapes, texts: sk.texts, axis: sk.axis }, (k, v) => (k[0] === '_' ? undefined : v)));
+  return { key: sk.key, hint: sk.hint, O: sk.O.toArray(), U: sk.U.toArray(), V: sk.V.toArray(), N: sk.N.toArray(), tid: sk.tid,
+    shapes: clean.shapes, texts: clean.texts, axis: clean.axis, kind: sk.kind, dist: sk.dist, dir: sk.dir, shift: sk.shift, angle: sk.angle, mode: sk.mode };
+}
+function resumeSketch(def, idx) {
+  startSketch(def.key, { O: new V3(...def.O), U: new V3(...def.U), V: new V3(...def.V), N: new V3(...def.N), hint: def.hint });
+  const cp = o => JSON.parse(JSON.stringify(o));
+  sk.shapes = cp(def.shapes); sk.texts = cp(def.texts); sk.axis = def.axis ? cp(def.axis) : null; sk.tid = def.tid;
+  sk.dist = def.dist; sk.dir = def.dir; sk.shift = def.shift; sk.angle = def.angle; sk.mode = def.mode; sk.editIndex = idx; sk.flying = false;
+  $('#exD').value = +sk.dist.toFixed(2); $('#exR').value = Math.min(200, sk.dist); $('#exOff').value = +sk.shift.toFixed(2); $('#exOffR').value = Math.max(-200, Math.min(200, sk.shift));
+  $('#rvA').value = +sk.angle.toFixed(1); $('#rvR').value = sk.angle;
+  $$('#exDir button').forEach(x => x.classList.toggle('on', x.dataset.dir === sk.dir));
+  $$('#exMode button').forEach(x => x.classList.toggle('on', x.dataset.mode === sk.mode));
+  toExtrude(def.kind);
+  toast('手順 ' + idx + ' を編集中。「✔ 決定」で作り直し(これ以降の手順は作り直しになります)', 6000);
+}
 
 /* --- 文字: フォントを描いて輪郭を取り出し、スケッチの図形(穴あき含む)にする --- */
 const FONTS = {
@@ -5090,7 +5431,7 @@ $('#btnPrev').onclick = () => {
     commit('前回の作品を開く'); setView('fit'); closeModal();
   } catch (e) { toast('開けなかったよ'); }
 };
-commit('はじめ'); refreshPanel(); resize();
+applyPlaneVis(); commit('はじめ'); refreshPanel(); resize();
 { let seen = false; try { seen = localStorage.getItem('m3d_help'); localStorage.setItem('m3d_help', '1'); } catch (e) {} if (!seen) openCard('helpCard'); }
 window.__m3d = { build3MF, proj: (x, y, z) => { const v = new THREE.Vector3(x, y, z).project(camera), r = cv.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; }, getArrows: () => arHandles.map(h => { const v = h.center.clone().project(camera), r = cv.getBoundingClientRect(); return { id: h.id, x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; }), startSketch, toExtrude, extrudeOk, getSk: () => sk, addShape, objects, buildSTEP, buildSTL, toXML, snapshot, runOp, select }; // デバッグ用
 })();
