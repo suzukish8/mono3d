@@ -35,7 +35,7 @@ header{display:flex;align-items:center;justify-content:space-between;gap:6px;pad
 #panel,#sketchPanel{background:var(--card);border-top:1px solid var(--line);padding:6px 8px calc(8px + env(safe-area-inset-bottom));max-height:44vh;overflow:auto;-webkit-overflow-scrolling:touch}
 #chip{font-size:13px;color:var(--mut);padding:2px 4px 6px;min-height:22px}
 #chip b{color:var(--ink)}
-#tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px}
+#tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px}
 #tabs button{padding:8px 1px;font-size:11.5px;font-weight:700;border-radius:10px}
 #tabs button.on{background:var(--pri);color:#fff;border-color:var(--pri)}
 .tab{display:none}.tab.on{display:block}
@@ -291,17 +291,12 @@ header>*{min-width:0}
   <section id="panel">
     <div id="chip"></div>
     <nav id="tabs">
-      <button data-tab="add" class="on">＋ 図形</button>
-      <button data-tab="move">✋ 動かす</button>
+      <button data-tab="move" class="on">✋ 動かす</button>
       <button data-tab="num">🔢 数値</button>
       <button data-tab="shape">🛠 加工</button>
     </nav>
 
-    <div class="tab on" id="tab-add">
-      <div id="palette"></div>
-    </div>
-
-    <div class="tab" id="tab-move">
+    <div class="tab on" id="tab-move">
       <div class="seg" id="modeSeg">
         <button data-mode="translate" class="on">↔ 移動</button>
         <button data-mode="rotate">⟳ 回転</button>
@@ -454,7 +449,6 @@ header>*{min-width:0}
     <h2>使い方</h2>
     <ol>
       <li><b>✏スケッチ</b>で平面(XY・YZ・ZX)を選び、長方形・円・多角形をかいて<b>押し出す</b>と立体ができます。図形の中にもう1つ図形をかくと穴になります。</li>
-      <li><b>＋図形</b>からは、できあいの形もすぐ追加できます。</li>
       <li>形をタップして選び、<b>動かす</b>で位置・回転・大きさを変える。数字で決めたいときは<b>数値</b>。</li>
       <li><b>くりぬく</b>: 穴をあけたい形を選び→くりぬくを押し→削る形をタップ。</li>
       <li><b>保存</b>から XML / STL / STEP で書き出せます。</li>
@@ -4042,9 +4036,7 @@ function applyNumbers(pre) {
 $$('#tab-num .grid3 input').forEach(i => i.addEventListener('change', () => applyNumbers('')));
 $$('#tab-num .grid3 input').forEach(i => i.addEventListener('keydown', e => { if (e.key === 'Enter') i.blur(); }));
 
-$('#palette').innerHTML = Object.keys(KINDS).map(k =>
-  '<button data-kind="' + k + '"><svg viewBox="0 0 40 40">' + KINDS[k].icon + '</svg>' + KINDS[k].label + '</button>').join('');
-$('#palette').addEventListener('click', e => { const b = e.target.closest('button'); if (b) addShape(b.dataset.kind); });
+// できあいの図形(箱・円柱など)を追加するボタンは、画面から外した。addShape() は内部用に残してある
 $('#swatches').innerHTML = PALETTE.map(c => '<button data-c="' + c + '" style="background:' + c + '"></button>').join('');
 function setObjColor(c) {
   currentColor = c;
