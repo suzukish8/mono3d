@@ -3661,6 +3661,14 @@ const requestRender = () => { needsRender = true; };
 const transform = new THREE.TransformControls(camera, cv);   // OrbitControlsより先に作る
 transform.setSize(1.3);
 scene.add(transform);
+// 回転用のハンドル(X・Y・Z軸まわりのリング)を、移動の矢印と同時に出す
+const rotator = new THREE.TransformControls(camera, cv);
+rotator.setMode('rotate'); rotator.setSpace('world'); rotator.setSize(0.85);
+scene.add(rotator);
+function syncRotator() {                                   // 「回転」モードのときは、移動側がリングを出すので、こちらは隠す
+  const on = !!selected && transform.mode !== 'rotate';
+  rotator.visible = on; rotator.enabled = on && !transform.dragging;
+}
 const orbit = new THREE.OrbitControls(camera, cv);
 orbit.enableDamping = false;
 orbit.target.set(0, 0, 15);
@@ -3671,6 +3679,7 @@ orbit.screenSpacePanning = true;
 orbit.update();
 orbit.addEventListener('change', requestRender);
 transform.addEventListener('change', requestRender);
+rotator.addEventListener('change', requestRender);
 
 function resize() {
   const w = stage.clientWidth, h = stage.clientHeight;
@@ -3766,9 +3775,10 @@ function select(mesh) {
   if (mesh) {
     mesh.material.emissive.copy(mesh.material.color).multiplyScalar(.28);
     mesh.getObjectByName('edges').material.color.setHex(EDGE_SEL);
-    transform.attach(mesh);
+    transform.attach(mesh); rotator.attach(mesh);
     applySnap();
-  } else transform.detach();
+  } else { transform.detach(); rotator.detach(); }
+  syncRotator();
   refreshPanel(); requestRender();
 }
 
@@ -3842,6 +3852,7 @@ let snapOn = true;
 function applySnap() {
   transform.setTranslationSnap(snapOn ? 5 : null);
   transform.setRotationSnap(snapOn ? THREE.MathUtils.degToRad(15) : null);
+  rotator.setRotationSnap(snapOn ? THREE.MathUtils.degToRad(15) : null);
   transform.setScaleSnap(snapOn && selected && selected.userData.kind !== 'mesh' ? 5 : null);
 }
 function addShape(kind) {
@@ -3953,13 +3964,13 @@ let down = null;
 cv.addEventListener('pointerdown', e => {
   if (sk) return;
   if (down && e.isPrimary === false) down.multi = true;
-  if (e.isPrimary) down = { x: e.clientX, y: e.clientY, t: performance.now(), grab: transform.dragging, multi: false };
+  if (e.isPrimary) down = { x: e.clientX, y: e.clientY, t: performance.now(), grab: transform.dragging || rotator.dragging, multi: false };
 });
 cv.addEventListener('pointerup', e => {
   if (sk) { down = null; return; }
   if (!down || !e.isPrimary) return;
   const d = down; down = null;
-  if (d.grab || d.multi || transform.dragging) return;
+  if (d.grab || d.multi || transform.dragging || rotator.dragging) return;
   if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 8 || performance.now() - d.t > 600) return;
   const r = cv.getBoundingClientRect();
   ray.setFromCamera(new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), camera);
@@ -3984,17 +3995,28 @@ cv.addEventListener('pointerup', e => {
   else clearFace();
 });
 let moved = false;
-transform.addEventListener('objectChange', () => {
+function onObjChange() {
   moved = true;
   const o = selected; if (!o) return;
   if (o.userData.kind !== 'mesh') o.scale.set(Math.max(1, o.scale.x), Math.max(1, o.scale.y), Math.max(1, o.scale.z));
   else o.scale.set(Math.max(.05, o.scale.x), Math.max(.05, o.scale.y), Math.max(.05, o.scale.z));
   refreshPanel(true);
-});
-transform.addEventListener('dragging-changed', e => {
-  orbit.enabled = !e.value;
-  if (!e.value && moved) { moved = false; commit(({ translate: '移動', rotate: '回転', scale: '大きさ変更' }[transform.mode] || '編集') + ': ' + (selected ? selected.userData.name : '')); }
-});
+}
+transform.addEventListener('objectChange', onObjChange);
+rotator.addEventListener('objectChange', onObjChange);
+// 2つのハンドルが重なっても、同時に掴まないようにする
+function dragChanged(self, other, label) {
+  return e => {
+    orbit.enabled = !e.value;
+    if (e.value) other.enabled = false;
+    else {
+      syncRotator(); transform.enabled = true;
+      if (moved) { moved = false; commit((label || ({ translate: '移動', rotate: '回転', scale: '大きさ変更' }[transform.mode] || '編集')) + ': ' + (selected ? selected.userData.name : '')); }
+    }
+  };
+}
+transform.addEventListener('dragging-changed', dragChanged(transform, rotator, null));
+rotator.addEventListener('dragging-changed', dragChanged(rotator, transform, '回転'));
 
 /* ---------- パネル ---------- */
 const fmt = v => String(+v.toFixed(2));
@@ -4055,7 +4077,7 @@ $('#tabs').addEventListener('click', e => {
 $('#modeSeg').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   $$('#modeSeg button').forEach(x => x.classList.toggle('on', x === b));
-  transform.setMode(b.dataset.mode);
+  transform.setMode(b.dataset.mode); syncRotator();
   transform.setSpace(b.dataset.mode === 'translate' ? 'world' : 'local');
   applySnap(); requestRender();
 });
