@@ -3647,7 +3647,7 @@ camera.add(headLight);
 
 const grid = new THREE.GridHelper(300, 30, 0x8a95ad, 0xc3cbdc);
 grid.rotation.x = Math.PI / 2;
-scene.add(grid);
+// 床の薄いグレーのグリッドは表示しない(scene.add(grid) をしない)。grid.visible の切り替えは残してあるが、何も起きない
 function axisLine(dir, color, label) {
   const g = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), dir.clone().multiplyScalar(45)]);
   scene.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color })));
